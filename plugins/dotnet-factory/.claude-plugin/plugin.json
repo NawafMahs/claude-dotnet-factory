@@ -1,0 +1,7 @@
+{
+  "name": "dotnet-factory",
+  "version": "0.1.0",
+  "description": "Repo-aware pipeline for enterprise .NET work with guardrail hooks and a deterministic gate.",
+  "author": { "name": "Nawaf Mahsoun" },
+  "keywords": ["dotnet", "aspnetcore", "efcore", "factory", "workflow", "guardrails"]
+}

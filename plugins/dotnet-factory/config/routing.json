@@ -1,0 +1,30 @@
+{
+  "$comment": "Which reviewers a change gets, decided from the diff. A repo can extend this with .factory/routing.json (same shape; its rules are appended).",
+  "always": ["code-reviewer"],
+  "models": {
+    "$comment": "Model per reviewer by job risk. Opus only where a miss is expensive.",
+    "low":    { "default": "sonnet", "security-reviewer": "sonnet" },
+    "medium": { "default": "sonnet", "security-reviewer": "opus" },
+    "high":   { "default": "sonnet", "code-reviewer": "opus", "security-reviewer": "opus" }
+  },
+  "rules": [
+    {
+      "reviewer": "db-reviewer",
+      "why": "schema, migrations, SQL or data-access code",
+      "when_paths": ["**/Migrations/**", "**/*.sql", "**/*DbContext*.cs", "**/*Repository*.cs", "**/Entities/**", "**/*EntityConfiguration*.cs", "**/SqlScripts/**"],
+      "when_added_lines": ["FromSqlRaw", "FromSqlInterpolated", "ExecuteSqlRaw", "\\bQuery(Async|First|Single)?\\w*<", "\\.Execute(Scalar)?(Async)?\\(", "\\bSqlCommand\\b", "\\.Include\\(", "AsNoTracking", "SaveChanges"]
+    },
+    {
+      "reviewer": "security-reviewer",
+      "why": "authentication, authorization, payments, secrets, middleware or untrusted input",
+      "when_paths": ["**/*Auth*", "**/*Auth*/**", "**/*Jwt*", "**/*Token*", "**/*Permission*", "**/*Role*", "**/*Payment*", "**/*Identity*/**", "**/Middlewares/**", "**/Middleware/**", "**/Program.cs", "**/Startup.cs", "**/appsettings*.json", "**/*Upload*"],
+      "when_added_lines": ["\\[AllowAnonymous\\]", "\\[Authorize", "FromSqlRaw", "Process\\.Start", "IFormFile", "Html\\.Raw", "innerHTML", "\\bJwt", "ClaimTypes", "Cors", "DangerousAcceptAnyServerCertificate|ServerCertificateCustomValidationCallback"]
+    },
+    {
+      "reviewer": "ui-reviewer",
+      "why": "pages, views, components, styles or client scripts",
+      "requires_plugin": "ui-factory",
+      "when_paths": ["**/*.cshtml", "**/*.razor", "**/wwwroot/**", "**/*.css", "**/*.scss", "**/*.tsx", "**/*.jsx", "**/*.vue", "**/*.html", "**/*.resx"]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "software-factory",
+  "owner": {
+    "name": "Nawaf Mahsoun"
+  },
+  "metadata": {
+    "description": "Personal software engineering factory for enterprise .NET work and the UIs on top of it.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "dotnet-factory",
+      "source": "./plugins/dotnet-factory",
+      "description": "Repo-aware pipeline for .NET backend work: discover, investigate, plan, build, verify, review, deliver. Ships guardrail hooks and a deterministic gate."
+    },
+    {
+      "name": "ui-factory",
+      "source": "./plugins/ui-factory",
+      "description": "UI pipeline on top of dotnet-factory: design-system inventory, UI build, browser verification (desktop/mobile, RTL/LTR), and an independent UI reviewer."
+    }
+  ]
+}

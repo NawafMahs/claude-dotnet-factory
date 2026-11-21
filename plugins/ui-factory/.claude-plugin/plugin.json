@@ -1,0 +1,7 @@
+{
+  "name": "ui-factory",
+  "version": "0.1.0",
+  "description": "UI pipeline for server-rendered and SPA front ends on .NET systems: design-system inventory, UI build rules, browser verification (desktop/mobile, RTL/LTR, states, console/network) and an independent UI reviewer. Uses dotnet-factory's job folder, gate and router.",
+  "author": { "name": "Nawaf Mahsoun" },
+  "keywords": ["ui", "ux", "razor", "bootstrap", "rtl", "accessibility", "factory"]
+}

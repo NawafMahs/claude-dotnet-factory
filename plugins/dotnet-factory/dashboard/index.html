@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Software Factory</title>
+<style>
+  :root {
+    --bg: #0d1013; --panel: #14181d; --card: #191e24; --card-hi: #1e242b;
+    --line: #262d35; --line-hi: #34404c; --text: #e6e9ec; --muted: #8b96a1; --faint: #5b6670;
+    --accent: #7aa2f7; --ok: #3fb68b; --ok-bg: #12352a; --bad: #e5534b; --bad-bg: #3a1716;
+    --warn: #d6a443; --warn-bg: #3a2e12; --idle-bg: #20262d;
+    --mono: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    --sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5f7; --panel: #eceef1; --card: #ffffff; --card-hi: #fafbfc;
+      --line: #dde1e6; --line-hi: #c3cad2; --text: #1d2329; --muted: #5d6873; --faint: #8b949e;
+      --accent: #3b63d1; --ok: #1f8a5f; --ok-bg: #dcf3e8; --bad: #c9372c; --bad-bg: #fbe3e1;
+      --warn: #9a6b00; --warn-bg: #fbf0d4; --idle-bg: #eef0f3;
+      color-scheme: light;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 var(--sans); }
+  header { display: flex; align-items: center; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  h1 { font-size: 16px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 999px; padding: 3px 12px; cursor: pointer; font: 12px var(--sans); }
+  .tab[aria-pressed="true"] { color: var(--text); border-color: var(--accent); }
+  .live { margin-left: auto; font: 12px var(--mono); color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+  .dot.stale { background: var(--bad); }
+  main { display: grid; grid-template-columns: repeat(6, minmax(220px, 1fr)); gap: 12px; padding: 16px 20px 40px; overflow-x: auto; }
+  .col { min-width: 220px; }
+  .col h2 { font-size: 13px; margin: 0 0 10px; display: flex; align-items: baseline; gap: 8px; font-weight: 600; }
+  .col h2 .sub { font: 11px var(--mono); color: var(--faint); font-weight: 400; }
+  .col h2 .n { margin-left: auto; color: var(--muted); font: 12px var(--mono); }
+  .col.human h2 { color: var(--bad); }
+  .col .empty { color: var(--faint); font: 12px var(--mono); padding: 4px 2px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .card:hover, .card:focus-visible { border-color: var(--line-hi); background: var(--card-hi); outline: none; }
+  .card.you { border-color: var(--bad); box-shadow: 0 0 0 1px color-mix(in srgb, var(--bad) 30%, transparent); }
+  .card .top { display: flex; align-items: center; gap: 6px; font: 11.5px var(--mono); color: var(--muted); }
+  .card .top .st { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; }
+  .card.you .top .st { background: var(--bad); }
+  .card.done .top .st { background: var(--ok); }
+  .card .call { margin-left: auto; color: var(--bad); font-weight: 700; letter-spacing: .4px; font-size: 10.5px; }
+  .card .title { margin: 5px 0 7px; font-weight: 500; word-break: break-word; }
+  .card .repo { font: 11px var(--mono); color: var(--faint); margin-bottom: 6px; }
+  .chips { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
+  .chip { font: 11px var(--mono); padding: 1px 7px; border-radius: 5px; background: var(--idle-bg); color: var(--muted); border: 1px dashed var(--line-hi); }
+  .chip.pass { background: var(--ok-bg); color: var(--ok); border-style: solid; border-color: transparent; }
+  .chip.fail, .chip.changes { background: var(--bad-bg); color: var(--bad); border-style: solid; border-color: transparent; }
+  .chip.partial, .chip.medium { background: var(--warn-bg); color: var(--warn); border-style: solid; border-color: transparent; }
+  .chip.high { background: var(--bad-bg); color: var(--bad); border-style: solid; border-color: transparent; }
+  .chip.low { background: var(--ok-bg); color: var(--ok); border-style: solid; border-color: transparent; }
+  .chip.solid { border-style: solid; }
+  .meta { display: flex; flex-wrap: wrap; gap: 2px 10px; font: 11.5px var(--mono); color: var(--faint); }
+  .meta span { white-space: nowrap; }
+  .next { margin-top: 8px; font: 11.5px var(--mono); color: var(--muted); }
+  .card.you .next { color: var(--text); }
+  .mr { color: var(--accent); font: 11.5px var(--mono); text-decoration: none; }
+  .mr:hover { text-decoration: underline; }
+  /* drawer */
+  dialog { border: 1px solid var(--line-hi); background: var(--panel); color: var(--text); border-radius: 12px; padding: 0; width: min(980px, calc(100vw - 32px)); height: min(86vh, 900px); }
+  dialog::backdrop { background: rgb(0 0 0 / .55); }
+  .dlg { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+  .dlg header { border-bottom: 1px solid var(--line); }
+  .dlg header .x { margin-left: auto; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 2px 10px; cursor: pointer; }
+  .dlg .body { display: grid; grid-template-columns: 220px 1fr; min-height: 0; }
+  .files { border-right: 1px solid var(--line); overflow: auto; padding: 10px; }
+  .files button { display: block; width: 100%; text-align: left; background: none; border: 0; color: var(--muted); font: 12px var(--mono); padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+  .files button[aria-current="true"] { background: var(--card-hi); color: var(--text); }
+  .files .sum { font: 11.5px var(--sans); color: var(--faint); padding: 2px 8px 8px; }
+  pre { margin: 0; padding: 16px 18px; overflow: auto; white-space: pre-wrap; word-break: break-word; font: 12.5px/1.55 var(--mono); }
+  pre .h { color: var(--accent); font-weight: 600; }
+  pre .v-pass { color: var(--ok); font-weight: 700; }
+  pre .v-bad { color: var(--bad); font-weight: 700; }
+  .hint { padding: 40px 20px; color: var(--faint); text-align: center; font: 13px var(--sans); }
+  @media (max-width: 720px) {
+    header { padding: 12px 16px; }
+    main { grid-template-columns: repeat(6, 82vw); padding: 12px 16px 32px; scroll-snap-type: x mandatory; }
+    .col { scroll-snap-align: start; }
+    .dlg .body { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .files { border-right: 0; border-bottom: 1px solid var(--line); max-height: 30vh; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Software factory</h1>
+  <div class="tabs" id="tabs" role="group" aria-label="Repository"></div>
+  <div class="live"><span class="dot" id="dot"></span><span id="clock">connecting…</span></div>
+</header>
+<main id="board" aria-live="polite"></main>
+<dialog id="dlg" aria-labelledby="dlg-title">
+  <div class="dlg">
+    <header><h1 id="dlg-title"></h1><button class="x" id="close" aria-label="Close">Esc</button></header>
+    <div class="body"><nav class="files" id="files" aria-label="Job files"></nav><pre id="content"></pre></div>
+  </div>
+</dialog>
+<script>
+const COLUMNS = [
+  ['intake', 'Intake', 'task · investigate'],
+  ['plan', 'Plan', 'plan.md draft'],
+  ['build', 'Build', 'build · gate'],
+  ['review', 'Review', 'routed reviewers'],
+  ['human', 'Needs you', 'your call'],
+  ['done', 'Done', 'MR opened'],
+];
+const CALL = {
+  'awaiting-approval': 'Approve or change plan.md in the chat',
+  'blocked': 'Builder is blocked — read build.md',
+  'reviewed': 'Reviews passed — say "deliver" to open the MR',
+};
+let data = null, lastSig = null, repoFilter = localStore('repo') || 'all', openJob = null;
+
+function localStore(k, v) {
+  try { if (v === undefined) return localStorage.getItem('sf.' + k); localStorage.setItem('sf.' + k, v); } catch { return null; }
+}
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const ago = (ms) => { const s = Math.max(0, (Date.now() - ms) / 1000); return s < 60 ? `${Math.round(s)}s` : s < 3600 ? `${Math.round(s / 60)}m` : s < 86400 ? `${Math.round(s / 3600)}h` : `${Math.round(s / 86400)}d`; };
+const dur = (a, b) => ago(Date.now() - (b - a));
+
+function chip(text, cls) { return el('span', 'chip ' + (cls || ''), text); }
+
+function card(job, repo, showRepo) {
+  const c = el('article', 'card' + (job.needsYou ? ' you' : '') + (job.column === 'done' ? ' done' : ''));
+  c.tabIndex = 0;
+  c.setAttribute('role', 'button');
+  c.setAttribute('aria-label', `${job.title} — ${job.stage}`);
+  const top = el('div', 'top');
+  top.append(el('span', 'st'), el('span', null, job.id.replace(/^\d{8}-(\d{4})-/, '$1 · ')));
+  if (job.needsYou) top.append(el('span', 'call', 'YOUR CALL'));
+  c.append(top);
+  if (showRepo) c.append(el('div', 'repo', repo.name));
+  c.append(el('div', 'title', job.title));
+
+  const chips = el('div', 'chips');
+  if (job.track) chips.append(chip(job.track, 'solid'));
+  if (job.risk) chips.append(chip(job.risk, job.risk));
+  if (job.gateRuns) chips.append(chip('R' + job.gateRuns, 'solid'));
+  if (job.gate) chips.append(chip('gate', job.gate));
+  else if (['build', 'review'].includes(job.column)) chips.append(chip('gate'));
+  for (const r of job.reviews) chips.append(chip(r.lens, r.verdict === 'pending' ? '' : r.verdict));
+  if (job.ui) chips.append(chip('ui-verify', job.ui));
+  if (chips.children.length) c.append(chips);
+
+  const meta = el('div', 'meta');
+  meta.append(el('span', null, job.stage), el('span', null, '⏱ ' + dur(job.created, job.updated)));
+  c.append(meta);
+  if (job.mr) { const a = el('a', 'mr', job.mr.replace(/^https?:\/\//, '')); a.href = job.mr; a.target = '_blank'; a.rel = 'noopener'; a.onclick = (e) => e.stopPropagation(); c.append(a); }
+  if (job.needsYou || job.column !== 'done') c.append(el('div', 'next', job.needsYou ? (CALL[job.stage] || job.next) : '→ ' + job.next));
+
+  const open = () => openDrawer(repo, job);
+  c.onclick = open;
+  c.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } };
+  return c;
+}
+
+function render() {
+  if (!data) return;
+  const tabs = document.getElementById('tabs');
+  tabs.replaceChildren();
+  const opts = [['all', 'All repos'], ...data.repos.map((r) => [String(r.index), r.name])];
+  if (!opts.some(([v]) => v === repoFilter)) repoFilter = 'all';
+  for (const [v, label] of opts) {
+    const b = el('button', 'tab', label);
+    b.setAttribute('aria-pressed', String(v === repoFilter));
+    b.onclick = () => { repoFilter = v; localStore('repo', v); render(); };
+    tabs.append(b);
+  }
+  const repos = data.repos.filter((r) => repoFilter === 'all' || String(r.index) === repoFilter);
+  const multi = repos.length > 1;
+  const board = document.getElementById('board');
+  board.replaceChildren();
+  for (const [key, name, sub] of COLUMNS) {
+    const col = el('section', 'col ' + key);
+    const items = repos.flatMap((r) => r.jobs.filter((j) => j.column === key).map((j) => [j, r]))
+      .sort((a, b) => b[0].updated - a[0].updated);
+    const h = el('h2', null, name);
+    h.append(el('span', 'sub', sub), el('span', 'n', String(items.length)));
+    col.append(h);
+    if (!items.length) col.append(el('div', 'empty', '—'));
+    const shown = key === 'done' ? items.slice(0, 15) : items;
+    for (const [j, r] of shown) col.append(card(j, r, multi));
+    board.append(col);
+  }
+  if (!data.repos.length) {
+    board.replaceChildren(el('div', 'hint', 'No repositories yet. Run /dotnet-factory:discover in a repo to register it.'));
+  }
+}
+
+async function tick() {
+  try {
+    const r = await fetch('/api/state', { cache: 'no-store' });
+    const next = await r.json();
+    document.getElementById('dot').classList.remove('stale');
+    document.getElementById('clock').textContent = `jobs · ${new Date().toLocaleTimeString()}`;
+    const sig = JSON.stringify(next.repos);
+    if (sig === lastSig) return; // nothing changed: keep focus, scroll and the open file as they are
+    lastSig = sig;
+    data = next;
+    render();
+    if (openJob) refreshDrawer();
+  } catch {
+    document.getElementById('dot').classList.add('stale');
+    document.getElementById('clock').textContent = 'dashboard server stopped';
+  }
+}
+
+// ---- drawer ----
+const dlg = document.getElementById('dlg');
+document.getElementById('close').onclick = () => dlg.close();
+dlg.addEventListener('close', () => { openJob = null; });
+
+function openDrawer(repo, job) {
+  openJob = { repo: repo.index, id: job.id, file: openJob?.id === job.id ? openJob.file : null };
+  refreshDrawer();
+  if (!dlg.open) dlg.showModal();
+}
+
+function refreshDrawer() {
+  const repo = data.repos.find((r) => r.index === openJob.repo);
+  const job = repo?.jobs.find((j) => j.id === openJob.id);
+  if (!job) return;
+  document.getElementById('dlg-title').textContent = `${repo.name} · ${job.id}`;
+  const order = ['task.md', 'context.md', 'plan.md', 'build.md', 'checks.md', 'route.md'];
+  const files = [...job.files].sort((a, b) => (order.indexOf(a) + 1 || 99) - (order.indexOf(b) + 1 || 99) || a.localeCompare(b));
+  if (!openJob.file || !files.includes(openJob.file)) openJob.file = files.find((f) => f !== 'meta.json') || files[0];
+  const nav = document.getElementById('files');
+  nav.replaceChildren();
+  for (const f of files) {
+    const b = el('button', null, f);
+    b.setAttribute('aria-current', String(f === openJob.file));
+    b.onclick = () => { openJob.file = f; refreshDrawer(); };
+    nav.append(b);
+    const s = job.summaries[f];
+    if (s?.first) nav.append(el('div', 'sum', s.first));
+  }
+  loadFile(openJob.repo, job.id, openJob.file);
+}
+
+async function loadFile(repo, id, name) {
+  const pre = document.getElementById('content');
+  if (!name) { pre.textContent = ''; return; }
+  const r = await fetch(`/api/file?repo=${repo}&job=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`, { cache: 'no-store' });
+  const text = r.ok ? await r.text() : 'not found';
+  if (!openJob || openJob.file !== name) return;
+  pre.replaceChildren();
+  for (const line of text.split('\n')) {
+    let cls = null;
+    if (/^#{1,6} /.test(line)) cls = 'h';
+    else if (/^(VERDICT|GATE|PLAN|STATUS|UI-VERIFY|CONTEXT|ROUTE|DELIVERED|TASK)\b.*\b(PASS|APPROVED|READY|DELIVERED)\b/.test(line)) cls = 'v-pass';
+    else if (/^(VERDICT|GATE|STATUS|UI-VERIFY)\b.*\b(CHANGES|FAIL|BLOCKED)\b/.test(line)) cls = 'v-bad';
+    pre.append(cls ? el('span', cls, line) : document.createTextNode(line), '\n');
+  }
+}
+
+tick();
+setInterval(tick, 3000);
+</script>
+</body>
+</html>
